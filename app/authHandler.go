@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Nishith-Savla/golang-banking-auth/dto"
 	"github.com/Nishith-Savla/golang-banking-auth/service"
-	"github.com/Nishith-Savla/golang-banking-lib/errs"
 	"github.com/Nishith-Savla/golang-banking-lib/logger"
 	"net/http"
 )
@@ -36,7 +35,7 @@ func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 // Sample URL string for Verify
-// http://localhost:8181/auth/verify?token=somevalidtokenstring&routeName=GetCustomer&customer_id=2000&account_id=95470
+// http://localhost:8001/auth/verify?token=somevalidtokenstring&routeName=GetCustomer&customer_id=2000&account_id=95470
 
 func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	urlParams := make(map[string]string)
@@ -46,29 +45,26 @@ func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if urlParams["token"] == "" {
-		appError := errs.NewAuthorizationError("missing token")
-		writeJSONResponse(w, appError.Code, appError.AsMessage())
+		writeJSONResponse(w, http.StatusForbidden, unauthorizedResponse("missing token"))
 		return
 	}
 
-	isAuthorized, err := h.service.Verify(urlParams)
-	if err != nil {
-		writeJSONResponse(w, http.StatusForbidden, unauthorizedResponse())
+	if appError := h.service.Verify(urlParams); appError != nil {
+		writeJSONResponse(w, appError.Code, unauthorizedResponse(appError.Message))
 		return
 	}
 
-	if isAuthorized {
-		writeJSONResponse(w, http.StatusOK, authorizedResponse())
-	} else {
-		writeJSONResponse(w, http.StatusForbidden, unauthorizedResponse())
-	}
+	writeJSONResponse(w, http.StatusOK, authorizedResponse())
 }
 func authorizedResponse() map[string]bool {
 	return map[string]bool{"isAuthorized": true}
 }
 
-func unauthorizedResponse() map[string]interface{} {
-	return map[string]interface{}{"isAuthorized": false}
+func unauthorizedResponse(message string) map[string]interface{} {
+	return map[string]interface{}{
+		"isAuthorized": false,
+		"message":      message,
+	}
 }
 
 func writeJSONResponse(w http.ResponseWriter, code int, data interface{}) {
