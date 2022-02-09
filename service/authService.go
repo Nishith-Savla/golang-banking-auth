@@ -4,8 +4,8 @@ import (
 	"errors"
 	"github.com/Nishith-Savla/golang-banking-auth/domain"
 	"github.com/Nishith-Savla/golang-banking-auth/dto"
-	"github.com/Nishith-Savla/golang-banking-auth/errs"
-	"github.com/Nishith-Savla/golang-banking-auth/logger"
+	"github.com/Nishith-Savla/golang-banking-lib/errs"
+	"github.com/Nishith-Savla/golang-banking-lib/logger"
 	"github.com/golang-jwt/jwt"
 )
 

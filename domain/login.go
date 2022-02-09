@@ -2,8 +2,8 @@ package domain
 
 import (
 	"database/sql"
-	"github.com/Nishith-Savla/golang-banking-auth/errs"
-	"github.com/Nishith-Savla/golang-banking-auth/logger"
+	"github.com/Nishith-Savla/golang-banking-lib/errs"
+	"github.com/Nishith-Savla/golang-banking-lib/logger"
 	"github.com/golang-jwt/jwt"
 	"strings"
 	"time"

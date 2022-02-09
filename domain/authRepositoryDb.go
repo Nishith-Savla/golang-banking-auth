@@ -2,8 +2,8 @@ package domain
 
 import (
 	"database/sql"
-	"github.com/Nishith-Savla/golang-banking-auth/errs"
-	"github.com/Nishith-Savla/golang-banking-auth/logger"
+	"github.com/Nishith-Savla/golang-banking-lib/errs"
+	"github.com/Nishith-Savla/golang-banking-lib/logger"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -19,7 +19,7 @@ func (d AuthRepositoryDb) FindBy(username, password string) (*Login, *errs.AppEr
                 	GROUP BY a.customer_id`
 	if err := d.client.Get(&login, sqlVerify, username, password); err != nil {
 		if err == sql.ErrNoRows {
-			return nil, errs.NewAuthorizationError("invalid credentials")
+			return nil, errs.NewAuthenticationError("invalid credentials")
 		}
 		logger.Error("Error while verifying login request from database: " + err.Error())
 		return nil, errs.NewUnexpectedError("unexpected database error")

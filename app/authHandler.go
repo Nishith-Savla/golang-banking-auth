@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Nishith-Savla/golang-banking-auth/dto"
-	"github.com/Nishith-Savla/golang-banking-auth/errs"
-	"github.com/Nishith-Savla/golang-banking-auth/logger"
 	"github.com/Nishith-Savla/golang-banking-auth/service"
+	"github.com/Nishith-Savla/golang-banking-lib/errs"
+	"github.com/Nishith-Savla/golang-banking-lib/logger"
 	"net/http"
 )
 
@@ -20,8 +20,7 @@ func (h AuthHandler) NotImplementedHandler(w http.ResponseWriter, _ *http.Reques
 
 func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var loginRequest dto.LoginRequest
-	err := json.NewDecoder(r.Body).Decode(&loginRequest)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
 		logger.Error("Error while decoding login loginRequest: " + err.Error())
 		writeJSONResponse(w, http.StatusBadRequest, err.Error())
 		return
@@ -47,7 +46,7 @@ func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if urlParams["token"] == "" {
-		appError := errs.NewForbiddenError("missing token")
+		appError := errs.NewAuthorizationError("missing token")
 		writeJSONResponse(w, appError.Code, appError.AsMessage())
 		return
 	}
