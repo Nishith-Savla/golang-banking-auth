@@ -11,6 +11,26 @@ type AuthRepositoryDb struct {
 	client *sqlx.DB
 }
 
+func (d AuthRepositoryDb) GenerateAndStoreRefreshTokenToStore(authToken AuthToken) (string, *errs.AppError) {
+	// generate the refresh token
+	var refreshToken string
+	var appError *errs.AppError
+
+	if refreshToken, appError = authToken.newRefreshToken(); appError != nil {
+		return "", appError
+	}
+
+	// store it to the store
+	sqlInsert := "INSERT INTO refresh_token_store (refresh_token) VALUES (?)"
+	_, err := d.client.Exec(sqlInsert, refreshToken)
+	if err != nil {
+		logger.Error("Error while storing refresh token to database: " + err.Error())
+		return "", errs.NewUnexpectedError("unexpected database error")
+	}
+
+	return refreshToken, nil
+}
+
 func (d AuthRepositoryDb) FindBy(username, password string) (*Login, *errs.AppError) {
 	var login Login
 	sqlVerify := `SELECT ANY_VALUE(username) as username, a.customer_id, ANY_VALUE(role) as role, group_concat(a.account_id) as account_numbers FROM users u

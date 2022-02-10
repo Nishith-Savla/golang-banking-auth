@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-const tokenDuration = time.Hour
-
 type Login struct {
 	Username   string         `db:"username"`
 	CustomerId sql.NullString `db:"customer_id"`
@@ -32,7 +30,7 @@ func (l Login) claimsForUser() Claims {
 		Username:   l.Username,
 		Role:       l.Role,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(tokenDuration).Unix(),
+			ExpiresAt: time.Now().Add(TokenDuration).Unix(),
 		},
 	}
 }
@@ -42,7 +40,7 @@ func (l Login) claimsForAdmin() Claims {
 		Username: l.Username,
 		Role:     l.Role,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(tokenDuration).Unix(),
+			ExpiresAt: time.Now().Add(TokenDuration).Unix(),
 		},
 	}
 }

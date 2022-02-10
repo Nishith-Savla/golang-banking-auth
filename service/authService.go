@@ -29,12 +29,16 @@ func (s DefaultAuthService) Login(req dto.LoginRequest) (*dto.LoginResponse, *er
 	claims := login.ClaimsForAccessToken()
 	authToken := domain.NewAuthToken(claims)
 
-	var accessToken string
+	var accessToken, refreshToken string
+
 	if accessToken, appError = authToken.NewAccessToken(); appError != nil {
 		return nil, appError
 	}
+	if refreshToken, appError = s.repo.GenerateAndStoreRefreshTokenToStore(authToken); appError != nil {
+		return nil, appError
+	}
 
-	return &dto.LoginResponse{accessToken}, nil
+	return &dto.LoginResponse{AccessToken: accessToken, RefreshToken: refreshToken}, nil
 }
 
 func (s DefaultAuthService) Verify(urlParams map[string]string) *errs.AppError {
