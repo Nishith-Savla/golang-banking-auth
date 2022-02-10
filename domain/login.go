@@ -2,8 +2,6 @@ package domain
 
 import (
 	"database/sql"
-	"github.com/Nishith-Savla/golang-banking-lib/errs"
-	"github.com/Nishith-Savla/golang-banking-lib/logger"
 	"github.com/golang-jwt/jwt"
 	"strings"
 	"time"
@@ -18,39 +16,33 @@ type Login struct {
 	Role       string         `db:"role"`
 }
 
-func (l Login) GenerateToken() (*string, *errs.AppError) {
-	var claims jwt.MapClaims
+func (l Login) ClaimsForAccessToken() Claims {
 	if l.Accounts.Valid && l.CustomerId.Valid {
-		claims = l.claimsForUser()
+		return l.claimsForUser()
 	} else {
-		claims = l.claimsForAdmin()
+		return l.claimsForAdmin()
 	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedTokenAsString, err := token.SignedString([]byte(HmacSampleSecret))
-	if err != nil {
-		logger.Error("Failed while signing token: " + err.Error())
-		return nil, errs.NewUnexpectedError("couldn't generate token")
-	}
-
-	return &signedTokenAsString, nil
 }
 
-func (l Login) claimsForUser() jwt.MapClaims {
+func (l Login) claimsForUser() Claims {
 	accounts := strings.Split(l.Accounts.String, ",")
-	return jwt.MapClaims{
-		"customer_id": l.CustomerId.String,
-		"username":    l.Username,
-		"role":        l.Role,
-		"accounts":    accounts,
-		"exp":         time.Now().Add(tokenDuration).Unix(),
+	return Claims{
+		CustomerId: l.CustomerId.String,
+		Accounts:   accounts,
+		Username:   l.Username,
+		Role:       l.Role,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(tokenDuration).Unix(),
+		},
 	}
 }
 
-func (l Login) claimsForAdmin() jwt.MapClaims {
-	return jwt.MapClaims{
-		"username": l.Username,
-		"role":     l.Role,
-		"exp":      time.Now().Add(tokenDuration).Unix(),
+func (l Login) claimsForAdmin() Claims {
+	return Claims{
+		Username: l.Username,
+		Role:     l.Role,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(tokenDuration).Unix(),
+		},
 	}
 }
