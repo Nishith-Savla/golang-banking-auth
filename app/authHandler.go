@@ -20,7 +20,7 @@ func (h AuthHandler) NotImplementedHandler(w http.ResponseWriter, _ *http.Reques
 func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var loginRequest dto.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
-		logger.Error("Error while decoding login loginRequest: " + err.Error())
+		logger.Error("Error while decoding loginRequest: " + err.Error())
 		writeJSONResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -36,6 +36,23 @@ func (h AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 // Sample URL string for Verify
 // http://localhost:8001/auth/verify?token=somevalidtokenstring&routeName=GetCustomer&customer_id=2000&account_id=95470
+
+func (h AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
+	var refreshTokenRequest dto.RefreshTokenRequest
+	if err := json.NewDecoder(r.Body).Decode(&refreshTokenRequest); err != nil {
+		logger.Error("Error while decoding refreshTokenRequest: " + err.Error())
+		writeJSONResponse(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	token, appError := h.service.Refresh(refreshTokenRequest)
+	if appError != nil {
+		writeJSONResponse(w, appError.Code, appError.AsMessage())
+		return
+	}
+
+	writeJSONResponse(w, http.StatusOK, *token)
+}
 
 func (h AuthHandler) Verify(w http.ResponseWriter, r *http.Request) {
 	urlParams := make(map[string]string)

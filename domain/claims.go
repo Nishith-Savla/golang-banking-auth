@@ -6,10 +6,10 @@ import (
 )
 
 const HmacSampleSecret = "HMAC_SAMPLE_SECRET"
-const TokenDuration = time.Hour
+const AccessTokenDuration = time.Hour
 const RefreshTokenDuration = time.Hour * 24 * 30
 
-type Claims struct {
+type AccessTokenClaims struct {
 	CustomerId string   `json:"customer_id"`
 	Accounts   []string `json:"accounts"`
 	Username   string   `json:"username"`
@@ -28,15 +28,15 @@ type RefreshTokenClaims struct {
 	jwt.StandardClaims
 }
 
-func (c Claims) IsUser() bool {
+func (c AccessTokenClaims) IsUser() bool {
 	return c.Role == "user"
 }
 
-func (c Claims) IsValidCustomerId(customerId string) bool {
+func (c AccessTokenClaims) IsValidCustomerId(customerId string) bool {
 	return c.CustomerId == customerId
 }
 
-func (c Claims) IsValidAccountId(accountId string) bool {
+func (c AccessTokenClaims) IsValidAccountId(accountId string) bool {
 	if accountId == "" {
 		return true
 	}
@@ -48,14 +48,14 @@ func (c Claims) IsValidAccountId(accountId string) bool {
 	return false
 }
 
-func (c Claims) IsRequestVerifiedWithTokenClaims(urlParams map[string]string) bool {
+func (c AccessTokenClaims) IsRequestVerifiedWithTokenClaims(urlParams map[string]string) bool {
 	if c.IsValidCustomerId(urlParams["customer_id"]) && c.IsValidAccountId(urlParams["account_id"]) {
 		return true
 	}
 	return false
 }
 
-func (c Claims) RefreshTokenClaims() RefreshTokenClaims {
+func (c AccessTokenClaims) RefreshTokenClaims() RefreshTokenClaims {
 	return RefreshTokenClaims{
 		TokenType:  "refresh_token",
 		CustomerId: c.CustomerId,
@@ -64,6 +64,18 @@ func (c Claims) RefreshTokenClaims() RefreshTokenClaims {
 		Role:       c.Role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(RefreshTokenDuration).Unix(),
+		},
+	}
+}
+
+func (c RefreshTokenClaims) AccessTokenClaims() AccessTokenClaims {
+	return AccessTokenClaims{
+		CustomerId: c.CustomerId,
+		Accounts:   c.Accounts,
+		Username:   c.Username,
+		Role:       c.Role,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(AccessTokenDuration).Unix(),
 		},
 	}
 }

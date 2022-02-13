@@ -11,6 +11,7 @@ import (
 type AuthService interface {
 	Login(req dto.LoginRequest) (*dto.LoginResponse, *errs.AppError)
 	Verify(urlParams map[string]string) *errs.AppError
+	Refresh(request dto.RefreshTokenRequest) (*dto.LoginResponse, *errs.AppError)
 }
 
 type DefaultAuthService struct {
@@ -54,7 +55,7 @@ func (s DefaultAuthService) Verify(urlParams map[string]string) *errs.AppError {
 	}
 
 	// type cast the token claims to jwt.MapClaims
-	claims := jwtToken.Claims.(*domain.Claims)
+	claims := jwtToken.Claims.(*domain.AccessTokenClaims)
 
 	if claims.IsUser() {
 		if !claims.IsRequestVerifiedWithTokenClaims(urlParams) {
@@ -71,8 +72,36 @@ func (s DefaultAuthService) Verify(urlParams map[string]string) *errs.AppError {
 
 }
 
+func (s DefaultAuthService) Refresh(request dto.RefreshTokenRequest) (*dto.LoginResponse, *errs.AppError) {
+	var validationError *jwt.ValidationError
+
+	if validationError = request.IsAccessTokenValid(); validationError == nil {
+		return nil, errs.NewAuthenticationError("cannot generate new access token until the current one expires")
+	}
+
+	if validationError.Errors != jwt.ValidationErrorExpired {
+		return nil, errs.NewAuthenticationError("invalid token")
+	}
+
+	// continue with the refresh token functionality
+
+	var accessToken string
+	var appError *errs.AppError
+
+	if appError = s.repo.RefreshTokenExists(request.RefreshToken); appError != nil {
+		return nil, appError
+	}
+
+	// generate an access token from refresh token
+	if accessToken, appError = domain.NewAccessTokenFromRefreshToken(request.RefreshToken); appError != nil {
+		return nil, appError
+	}
+
+	return &dto.LoginResponse{AccessToken: accessToken}, nil
+}
+
 func jwtTokenFromString(tokenString string) (*jwt.Token, error) {
-	token, err := jwt.ParseWithClaims(tokenString, &domain.Claims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &domain.AccessTokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(domain.HmacSampleSecret), nil
 	})
 	if err != nil {
